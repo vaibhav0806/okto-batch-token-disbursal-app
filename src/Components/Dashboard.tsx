@@ -57,8 +57,6 @@ const Dashboard: React.FC<DashboardProps> = ({ children }) => {
     }
   };
 
-  console.log("idToken:", idToken);
-  console.log("authToken:", authToken);
   useEffect(() => {
     if (idToken) {
       authenticateUser(idToken);
