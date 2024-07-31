@@ -63,7 +63,7 @@ const History: React.FC<HistoryProps> = ({ history }) => {
       });
     });
   }, [history]);
-  // Sort history by timestamp or any identifier that signifies recency
+
   const sortedHistory = [...history].sort((a, b) => {
     const dateA = new Date(a.orderDate).getTime();
     const dateB = new Date(b.orderDate).getTime();
@@ -80,8 +80,6 @@ const History: React.FC<HistoryProps> = ({ history }) => {
     }
     return null;
   };
-
-  console.log("history", sortedHistory);
 
   return (
     <div className="mt-5">

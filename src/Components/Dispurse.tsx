@@ -32,22 +32,25 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
   const [showToast, setShowToast] = useState<boolean>(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState<boolean>(false);
   const [allTokens, setAllTokens] = useState<Token[]>([]);
-  const [OrderStatus, setOrderStatus] = useState<string>("");
+  const [tokenBalances, setTokenBalances] = useState<{ [key: string]: string }>(
+    {}
+  );
+  const [selectedTokenBalance, setSelectedTokenBalance] =
+    useState<string>("0.00");
   const dispatch = useDispatch();
-
+  const [wallets, setWallets] = useState<Wallet[]>([]);
   const {
     getSupportedNetworks,
     getSupportedTokens,
     transferTokens,
+    getPortfolio,
     createWallet,
   } = useOkto() as OktoContextType;
   useEffect(() => {
     const fetchSupportedNetworks = async () => {
       try {
         const response = await getSupportedNetworks();
-        console.log("response chain", response.network);
         const walletsResponse = await createWallet();
-        console.log("Wallets response:", walletsResponse.wallets);
         const filteredWallets: Wallet[] = walletsResponse.wallets
           .filter(
             (wallet) =>
@@ -60,11 +63,18 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
           }));
 
         dispatch(setWalletAddress(filteredWallets));
-        // Transform response to fit the expected type
+        setWallets(walletsResponse.wallets);
+        const userbalance = await getPortfolio();
+        const balanceMap: { [key: string]: string } = {};
+        userbalance?.tokens.forEach((token: any) => {
+          const key = `${token.network_name}_${token.token_name}`;
+          balanceMap[key] = parseFloat(token.quantity).toFixed(2);
+        });
+        setTokenBalances(balanceMap);
         const transformedNetworks: Network[] = response.network.map(
           (network) => ({
             ...network,
-            network_name: network.network_name as SupportedChain, // Cast network_name to SupportedChain
+            network_name: network.network_name as SupportedChain,
           })
         );
 
@@ -79,19 +89,26 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
   }, [getSupportedNetworks]);
 
   useEffect(() => {
+    const fetchBalance = async () => {
+      if (selectedChain && selectedToken) {
+        const key = `${selectedChain}_${selectedToken}`;
+        const tokenBalance = tokenBalances[key] || "0.00";
+        setSelectedTokenBalance(tokenBalance);
+      }
+    };
+
+    fetchBalance();
+  }, [selectedChain, selectedToken, tokenBalances]);
+
+  useEffect(() => {
     const fetchSupportedTokens = async () => {
       try {
         const response = await getSupportedTokens();
-        console.log("response", response.tokens);
-
-        // Transform response to fit the expected type
         const transformedTokens: Token[] = response.tokens.map((token) => ({
           ...token,
-          token_name: token.token_name as SupportedToken, // Cast token_name to SupportedToken
+          token_name: token.token_name as SupportedToken,
         }));
-        console.log("transformedTokens", transformedTokens);
-
-        setAllTokens(transformedTokens); // Store all tokens
+        setAllTokens(transformedTokens);
       } catch (error) {
         console.error("Error fetching supported tokens:", error);
       }
@@ -152,15 +169,12 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
         const id = parseInt(parts[0]);
         const address = parts[1];
         const amount = parts.slice(2).join(" ").trim();
-
-        console.log(id, address, amount);
         result.push({ id, address, amount });
       }
     }
 
     setAddresses(result);
     setIsImportModalOpen(false);
-    console.log("addresses", result);
   };
 
   const handleAddAddress = () => {
@@ -206,35 +220,32 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
       totalWallets: addresses.length,
       walletAddresses: addresses.map((addr) => ({
         address: addr.address,
-        orderId: "", // Initialize orderId as empty
-        status: "Pending", // Initialize status as Pending
+        orderId: "",
+        status: "Pending",
       })),
       maxFees,
-      orderDate: new Date(), // Add the current date and time
+      orderDate: new Date(),
     };
 
-    setShowToast(true); // Show processing toast
+    setShowToast(true);
     setIsButtonDisabled(true);
 
-    // Loop through each address and perform the transfer
     for (const addr of addresses) {
       try {
         const result: any = await transferTokens({
           network_name: selectedChain,
-          token_address: token.token_address, // Use the mapped token address here
+          token_address: token.token_address,
           recipient_address: addr.address,
           quantity: addr.amount,
         });
 
         if (result && result?.orderId) {
-          // Update orderId and status for the successful transfer
           orderData.walletAddresses = orderData.walletAddresses.map((wa) =>
             wa.address === addr.address
               ? { ...wa, orderId: result.orderId, status: "Success" }
               : wa
           );
         } else {
-          // Handle the case where the result doesn't contain expected data
           orderData.walletAddresses = orderData.walletAddresses.map((wa) =>
             wa.address === addr.address
               ? { ...wa, status: "Failed", orderId: "N/A" }
@@ -244,7 +255,6 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
       } catch (error) {
         console.error("Transfer error", error);
 
-        // Update status for the failed transfer
         orderData.walletAddresses = orderData.walletAddresses.map((wa) =>
           wa.address === addr.address
             ? { ...wa, status: "Failed", orderId: "N/A" }
@@ -253,8 +263,7 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
       }
     }
 
-    // After processing all transfers
-    dispatch(addHistory(orderData)); // Only dispatch to Redux
+    dispatch(addHistory(orderData));
     setSelectedChain("");
     setSelectedToken("");
     setAddresses([]);
@@ -353,7 +362,14 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
             </div>
           </div>
         </div>
-
+        {selectedToken && (
+          <div className="flex mt-2  items-center gap-1 justify-end">
+            <p>Balance:</p>
+            <p className="text-sm text-[#707070]">
+              {selectedTokenBalance} {selectedToken}
+            </p>
+          </div>
+        )}
         <div className="flex mt-8 justify-between">
           <p className="font-semibold text-xl">Disperse to</p>
           <div className="flex gap-4">
@@ -469,7 +485,8 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
               <div>
                 <p className="text-[#707070] text-[15px]">Disperse Amount:</p>
                 <p>
-                  {totalAmount} {selectedToken}
+                  {totalAmount} {selectedToken} / {selectedTokenBalance}{" "}
+                  {selectedToken}
                 </p>
               </div>
               <div>
@@ -483,6 +500,7 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
                 !selectedToken ||
                 addresses.length === 0 ||
                 !totalAmount ||
+                totalAmount > parseFloat(selectedTokenBalance) ||
                 !authToken
                   ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                   : "bg-black text-white"
@@ -493,6 +511,7 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
                 !selectedToken ||
                 addresses.length === 0 ||
                 !totalAmount ||
+                totalAmount > parseFloat(selectedTokenBalance) ||
                 !authToken
               }
             >
@@ -575,7 +594,10 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
             </div>
             <div>
               <p>From Wallet Address:</p>
-              <p className="text-sm text-[#707070]">asdf</p>
+              <p className="text-sm overflow-auto text-[#707070]">
+                {wallets.find((wallet) => wallet.network_name === selectedChain)
+                  ?.address || "N/A"}
+              </p>
             </div>
             <div className="w-full flex flex-col gap-3">
               <div className="flex justify-between items-center">
@@ -589,8 +611,10 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
                 </p>
               </div>
               <div className="flex justify-between items-center">
-                <p>Max Fees:</p>
-                <p>{maxFees}</p>
+                <p>Sender Balance:</p>
+                <p>
+                  {selectedTokenBalance} {selectedToken}
+                </p>
               </div>
             </div>
           </div>
