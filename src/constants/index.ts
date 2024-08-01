@@ -4,8 +4,7 @@ export const addressList = [
   {
     name: "EVM",
     network_name: "BASE",
-    imgSrc:
-      "https://w7.pngwing.com/pngs/268/1013/png-transparent-ethereum-eth-hd-logo-thumbnail.png",
+    imgSrc: "https://avatars.githubusercontent.com/u/108554348?s=280&v=4",
     explorerUrl: "https://basescan.org/address/",
   },
   {
@@ -22,6 +21,20 @@ export const addressList = [
     imgSrc:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSTKX0VVgxldJmuDo_7lTxhnhqsTXlyTZcARQ&s",
     explorerUrl: "https://explorer.aptoslabs.com/account/",
+  },
+  {
+    name: "Solana",
+    network_name: "SOLANA",
+    imgSrc: "https://cryptologos.cc/logos/solana-sol-logo.png",
+    explorerUrl: "https://explorer.solana.com/address/",
+    networkSuffix: "?cluster=mainnet",
+  },
+  {
+    name: "Solana Devnet",
+    network_name: "SOLANA_DEVNET",
+    imgSrc: "https://cryptologos.cc/logos/solana-sol-logo.png",
+    explorerUrl: "https://explorer.solana.com/address/",
+    networkSuffix: "?cluster=devnet",
   },
 ];
 

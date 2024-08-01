@@ -62,7 +62,7 @@ const Dispurse: React.FC<DispurseProps> = ({ setActiveTab, setHistory }) => {
             address: wallet.address,
           }));
 
-        dispatch(setWalletAddress(filteredWallets));
+        dispatch(setWalletAddress(walletsResponse.wallets));
         setWallets(walletsResponse.wallets);
         const userbalance = await getPortfolio();
         const balanceMap: { [key: string]: string } = {};
