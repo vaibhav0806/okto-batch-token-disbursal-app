@@ -71,8 +71,6 @@ const Dashboard: React.FC<DashboardProps> = ({ children }) => {
     }
   };
 
-  console.log("wallets", wallets);
-
   const filterWallets = (wallets: Wallet[] | null) => {
     const uniqueWallets: { [key: string]: Wallet } = {};
     wallets?.forEach((wallet) => {
@@ -89,7 +87,6 @@ const Dashboard: React.FC<DashboardProps> = ({ children }) => {
   };
 
   const filteredWallets = filterWallets(wallets);
-  console.log("filteredWallets", filteredWallets);
 
   const handleLogout = async () => {
     try {
