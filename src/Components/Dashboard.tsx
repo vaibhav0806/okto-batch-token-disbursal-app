@@ -71,6 +71,23 @@ const Dashboard: React.FC<DashboardProps> = ({ children }) => {
     }
   };
 
+  const filterWallets = (wallets: Wallet[] | null) => {
+    const uniqueWallets: { [key: string]: Wallet } = {};
+    wallets?.forEach((wallet) => {
+      const networkName = wallet.network_name.split("_")[0];
+      if (
+        !uniqueWallets[networkName] ||
+        (!wallet.network_name.includes("TESTNET") &&
+          !wallet.network_name.includes("DEVNET"))
+      ) {
+        uniqueWallets[networkName] = wallet;
+      }
+    });
+    return Object.values(uniqueWallets);
+  };
+
+  const filteredWallets = filterWallets(wallets);
+
   const handleLogout = async () => {
     try {
       await logOut();
@@ -170,50 +187,41 @@ const Dashboard: React.FC<DashboardProps> = ({ children }) => {
                     className="absolute right-0 mt-2 w-56 z-10 bg-white border border-gray-300 shadow-lg rounded-md"
                   >
                     <div className="px-4 py-2">
-                      {wallets &&
-                        wallets
-                          ?.filter(
-                            (wallet) =>
-                              !wallet.network_name
-                                .toLowerCase()
-                                .includes("testnet")
-                          )
-                          .map((wallet) => {
-                            const addressItem = addressList.find(
-                              (item) =>
-                                item.network_name === wallet.network_name
-                            );
-                            return (
-                              <div
-                                key={wallet.network_name}
-                                className="flex justify-between items-center mt-2"
+                      {filteredWallets.map((wallet) => {
+                        const addressItem = addressList.find(
+                          (item) => item.network_name === wallet.network_name
+                        );
+                        return (
+                          <div
+                            key={wallet.network_name}
+                            className="flex justify-between items-center mt-2"
+                          >
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={addressItem?.imgSrc}
+                                alt={addressItem?.name}
+                                className="w-4 h-4"
+                              />
+                              <a
+                                href={`${addressItem?.explorerUrl}${wallet.address}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-black"
                               >
-                                <div className="flex items-center gap-2">
-                                  <img
-                                    src={addressItem?.imgSrc}
-                                    alt={addressItem?.name}
-                                    className="w-4 h-4"
-                                  />
-                                  <a
-                                    href={`${addressItem?.explorerUrl}${wallet.address}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-black"
-                                  >
-                                    {wallet.address.slice(0, 15)}...
-                                  </a>
-                                </div>
-                                <FiArrowUpRight className="text-xl" />
-                              </div>
-                            );
-                          })}
+                                {wallet.address.slice(0, 15)}...
+                              </a>
+                            </div>
+                            <FiArrowUpRight className="text-xl" />
+                          </div>
+                        );
+                      })}
                       <hr className="my-2" />
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 text-left px-1 py-1 hover:bg-gray-100"
                       >
                         <LuLogOut />
-                        <span> Logout</span>
+                        <span>Logout</span>
                       </button>
                     </div>
                   </div>
