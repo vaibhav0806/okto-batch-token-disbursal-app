@@ -17,7 +17,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.411.0",
-    "okto-sdk-react": "^0.0.2",
+    "okto-sdk-react": "0.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-google-login": "^5.2.2",
